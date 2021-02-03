@@ -25,49 +25,16 @@ def get_data(query):
     return r.json()
 
 
-# Get a list of issues and their impacts for RHSA-2016:1847
-endpoint = '/cve.json'
+# Get a get CVE
+endpoint = '/cve/CVE-2019-1125'
 params = 'advisory=RHSA-2016:1847'
 
 data = get_data(endpoint + '?' + params)
 
-for cve in data:
-    print(cve['CVE'], cve['severity'])
 
+# find the RHSA for a specific CVE - In this case we only will care about 7.6 EUS
+for affected_release in data['affected_release']:
+    print(affected_release['product_name'] + " " + affected_release['advisory'])
+    #, affected_release['advisory']
 
-print('-----')
-# Get a list of kernel advisories for the last 30 days and display the
-# packages that they provided.
-endpoint = '/cvrf.json'
-date = datetime.now() - timedelta(days=30)
-params = 'package=kernel&after=' + str(date.date())
-
-data = get_data(endpoint + '?' + params)
-
-kernel_advisories = []
-for advisory in data:
-    print(advisory['RHSA'], advisory['severity'], advisory['released_on'])
-    print('-', '\n- '.join(advisory['released_packages']))
-    kernel_advisories.append(advisory['RHSA'])
-
-
-print('-----')
-# From the list of advisories saved in the previous example (as
-# `kernel_advisories`), get a list of affected products for each advisory.
-endpoint = '/cvrf/'
-
-for advisory in kernel_advisories:
-    data = get_data(endpoint + advisory + '.json')
-    print(advisory)
-
-    product_branch = data['cvrfdoc']['product_tree']['branch']
-    for product_branch in data['cvrfdoc']['product_tree']['branch']:
-
-        if product_branch['type'] == 'Product Family':
-
-            if type(product_branch['branch']) is dict:
-                print('-', product_branch['branch']['full_product_name'])
-
-            else:
-                print('-', '\n- '.join(pr['full_product_name'] for
-                                       pr in product_branch['branch']))
+# For that RHSA, get the fixed package names with proper revision
